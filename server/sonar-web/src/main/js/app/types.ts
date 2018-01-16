@@ -181,3 +181,16 @@ export interface AppState {
   organizationsEnabled?: boolean;
   qualifiers: string[];
 }
+
+export interface Rule {
+  isTemplate?: boolean;
+  key: string;
+  lang: string;
+  langName: string;
+  name: string;
+  severity?: string;
+  status: string;
+  sysTags?: string[];
+  tags?: string[];
+  type: string;
+}

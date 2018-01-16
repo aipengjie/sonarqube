@@ -17,31 +17,26 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import SearchSelect from '../controls/SearchSelect';
+import * as React from 'react';
+import Facet, { BasicProps } from './Facet';
+import { translate } from '../../../helpers/l10n';
 
-/*::
-type Option = { label: string, value: string };
-*/
-
-/*::
-type Props = {|
-  minimumQueryLength?: number,
-  onSearch: (query: string) => Promise<Array<Option>>,
-  onSelect: (value: string) => void,
-  renderOption?: (option: Object) => React.Element<*>
-|};
-*/
-
-export default class FacetFooter extends React.PureComponent {
-  /*:: props: Props; */
+export default class StatusFacet extends React.PureComponent<BasicProps> {
+  renderName = (status: string) => {
+    return translate('rules.status', status.toLowerCase());
+  };
 
   render() {
+    const options = ['READY', 'DEPRECATED', 'BETA'];
+
     return (
-      <div className="search-navigator-facet-footer">
-        <SearchSelect autofocus={false} {...this.props} />
-      </div>
+      <Facet
+        {...this.props}
+        options={options}
+        property="statuses"
+        renderName={this.renderName}
+        renderTextName={this.renderName}
+      />
     );
   }
 }

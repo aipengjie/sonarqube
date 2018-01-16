@@ -17,39 +17,22 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import { translate } from '../../../helpers/l10n';
+import * as React from 'react';
+import SearchSelect from '../controls/SearchSelect';
 
-/*::
-type Props = {
-  displayReset: boolean,
-  onReset: () => void
-};
-*/
+type Option = { label: string; value: string };
 
-export default class FiltersHeader extends React.PureComponent {
-  /*:: props: Props; */
+interface Props {
+  minimumQueryLength?: number;
+  onSearch: (query: string) => Promise<Option[]>;
+  onSelect: (value: string) => void;
+  renderOption?: (option: Object) => JSX.Element;
+}
 
-  handleResetClick = (e /*: Event & { currentTarget: HTMLElement } */) => {
-    e.preventDefault();
-    e.currentTarget.blur();
-    this.props.onReset();
-  };
-
-  render() {
-    return (
-      <div className="issues-filters-header">
-        {this.props.displayReset && (
-          <div className="pull-right">
-            <button className="button-red" onClick={this.handleResetClick}>
-              {translate('clear_all_filters')}
-            </button>
-          </div>
-        )}
-
-        <h3>{translate('filters')}</h3>
-      </div>
-    );
-  }
+export default function FacetFooter(props: Props) {
+  return (
+    <div className="search-navigator-facet-footer">
+      <SearchSelect autofocus={false} {...props} />
+    </div>
+  );
 }

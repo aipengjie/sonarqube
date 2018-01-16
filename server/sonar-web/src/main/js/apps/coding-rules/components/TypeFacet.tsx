@@ -17,17 +17,36 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import { shallow } from 'enzyme';
-import FacetBox from '../FacetBox';
+import * as React from 'react';
+import Facet, { BasicProps } from './Facet';
+import IssueTypeIcon from '../../../components/ui/IssueTypeIcon';
+import { translate } from '../../../helpers/l10n';
 
-it('should render', () => {
-  expect(
-    shallow(
-      <FacetBox>
-        <div />
-      </FacetBox>
-    )
-  ).toMatchSnapshot();
-});
+export default class TypeFacet extends React.PureComponent<BasicProps> {
+  renderName = (type: string) => {
+    return (
+      <>
+        <IssueTypeIcon className="little-spacer-right" query={type} />
+        {translate('issue.type', type)}
+      </>
+    );
+  };
+
+  renderTextName = (type: string) => {
+    return translate('issue.type', type);
+  };
+
+  render() {
+    const options = ['BUG', 'VULNERABILITY', 'CODE_SMELL'];
+
+    return (
+      <Facet
+        {...this.props}
+        options={options}
+        property="types"
+        renderName={this.renderName}
+        renderTextName={this.renderTextName}
+      />
+    );
+  }
+}

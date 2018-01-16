@@ -17,27 +17,32 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import PageCounter from '../../../components/common/PageCounter';
+import * as React from 'react';
+import Facet, { BasicProps } from './Facet';
+import SeverityHelper from '../../../components/shared/SeverityHelper';
 import { translate } from '../../../helpers/l10n';
-import { formatMeasure } from '../../../helpers/measures';
 
-/*::
-type Props = {
-  className? : string,
-  current: ?number,
-  total: number
-};
-*/
+export default class DefaultSeverityFacet extends React.PureComponent<BasicProps> {
+  renderName = (severity: string) => {
+    return <SeverityHelper severity={severity} />;
+  };
 
-export default function IssuesCounter(props /*:Props*/) {
-  return (
-    <PageCounter
-      className="spacer-left flash flash-heavy"
-      current={props.current}
-      label={translate('issues.issues')}
-      total={props.total}
-    />
-  );
+  renderTextName = (severity: string) => {
+    return translate('severity', severity);
+  };
+
+  render() {
+    const options = ['BLOCKER', 'MINOR', 'CRITICAL', 'INFO', 'MAJOR'];
+
+    return (
+      <Facet
+        {...this.props}
+        halfWidth={true}
+        options={options}
+        property="severities"
+        renderName={this.renderName}
+        renderTextName={this.renderTextName}
+      />
+    );
+  }
 }

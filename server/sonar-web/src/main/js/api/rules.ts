@@ -19,16 +19,37 @@
  */
 import { post, getJSON, RequestData } from '../helpers/request';
 import throwGlobalError from '../app/utils/throwGlobalError';
+import { Rule } from '../app/types';
 
 export interface GetRulesAppResponse {
-  respositories: Array<{ key: string; language: string; name: string }>;
+  repositories: Array<{ key: string; language: string; name: string }>;
 }
 
 export function getRulesApp(): Promise<GetRulesAppResponse> {
   return getJSON('/api/rules/app').catch(throwGlobalError);
 }
 
-export function searchRules(data: RequestData) {
+export interface SearchRulesResponse {
+  actives?: {
+    [rule: string]: Array<{
+      createdAt: string;
+      inherit: string;
+      params: any[];
+      qProfile: string;
+      severity: string;
+    }>;
+  };
+  facets?: Array<{
+    property: string;
+    values: Array<{ count: number; val: string }>;
+  }>;
+  p: number;
+  ps: number;
+  rules: Rule[];
+  total: number;
+}
+
+export function searchRules(data: RequestData): Promise<SearchRulesResponse> {
   return getJSON('/api/rules/search', data).catch(throwGlobalError);
 }
 
@@ -47,7 +68,11 @@ export function getRuleDetails(parameters: GetRuleDetailsParameters): Promise<an
   return getJSON('/api/rules/show', parameters).catch(throwGlobalError);
 }
 
-export function getRuleTags(parameters: { organization?: string }): Promise<string[]> {
+export function getRuleTags(parameters: {
+  organization?: string;
+  ps?: number;
+  q: string;
+}): Promise<string[]> {
   return getJSON('/api/rules/tags', parameters).then(r => r.tags, throwGlobalError);
 }
 

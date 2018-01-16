@@ -17,11 +17,34 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import { shallow } from 'enzyme';
-import FacetFooter from '../FacetFooter';
+import * as React from 'react';
+import { translate } from '../../helpers/l10n';
 
-it('should render', () => {
-  expect(shallow(<FacetFooter onSearch={jest.fn()} onSelect={jest.fn()} />)).toMatchSnapshot();
-});
+interface Props {
+  displayReset: boolean;
+  onReset: () => void;
+}
+
+export default class FiltersHeader extends React.PureComponent<Props> {
+  handleResetClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.props.onReset();
+  };
+
+  render() {
+    return (
+      <div className="search-navigator-filters-header">
+        {this.props.displayReset && (
+          <div className="pull-right">
+            <button className="button-red" onClick={this.handleResetClick}>
+              {translate('clear_all_filters')}
+            </button>
+          </div>
+        )}
+
+        <h3>{translate('filters')}</h3>
+      </div>
+    );
+  }
+}

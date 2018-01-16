@@ -17,27 +17,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import PageCounter from '../../../components/common/PageCounter';
-import { translate } from '../../../helpers/l10n';
-import { formatMeasure } from '../../../helpers/measures';
+import * as React from 'react';
+import * as classNames from 'classnames';
 
-/*::
-type Props = {
-  className? : string,
-  current: ?number,
-  total: number
-};
-*/
+interface Props {
+  className?: string;
+  children: React.ReactNode;
+}
 
-export default function IssuesCounter(props /*:Props*/) {
+export default function FacetBox(props: Props) {
   return (
-    <PageCounter
-      className="spacer-left flash flash-heavy"
-      current={props.current}
-      label={translate('issues.issues')}
-      total={props.total}
-    />
+    <div className={classNames('search-navigator-facet-box', props.className)}>
+      {props.children}
+    </div>
   );
 }

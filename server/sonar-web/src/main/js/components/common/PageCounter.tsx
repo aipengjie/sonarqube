@@ -17,17 +17,30 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
-import { shallow } from 'enzyme';
-import FacetItemsList from '../FacetItemsList';
+import * as React from 'react';
+import * as classNames from 'classnames';
+import { formatMeasure } from '../../helpers/measures';
 
-it('should render', () => {
-  expect(
-    shallow(
-      <FacetItemsList>
-        <div />
-      </FacetItemsList>
-    )
-  ).toMatchSnapshot();
-});
+interface Props {
+  className?: string;
+  current?: number;
+  label: string;
+  total: number;
+}
+
+export default function PageCounter({ className, current, label, total }: Props) {
+  return (
+    <div className={classNames('display-inline-block', className)}>
+      <strong>
+        {current !== undefined && (
+          <>
+            {formatMeasure(current + 1, 'INT')}
+            {' / '}
+          </>
+        )}
+        {formatMeasure(total, 'INT')}
+      </strong>{' '}
+      {label}
+    </div>
+  );
+}
