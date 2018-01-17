@@ -30,6 +30,7 @@ import { translate, translateWithParameters } from '../../../helpers/l10n';
 
 interface Props {
   activation?: Activation;
+  onClick: (rule: string) => void;
   onFilterChange: (changes: Partial<Query>) => void;
   rule: Rule;
   selected: boolean;
@@ -39,6 +40,12 @@ interface Props {
 // TODO open rule in new tab on cmd+click
 
 export default class RuleListItem extends React.PureComponent<Props> {
+  handleClick = (event: React.SyntheticEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.props.onClick(this.props.rule.key);
+  };
+
   renderActivation = () => {
     const { activation, selectedProfile } = this.props;
     if (!activation) {
@@ -128,7 +135,7 @@ export default class RuleListItem extends React.PureComponent<Props> {
 
               <td>
                 <div className="coding-rule-title">
-                  <a className="link-no-underline" href="{{permalink}}">
+                  <a className="link-no-underline" href="#" onClick={this.handleClick}>
                     {rule.name}
                   </a>
                   {rule.isTemplate && (

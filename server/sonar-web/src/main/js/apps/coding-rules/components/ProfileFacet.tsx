@@ -31,6 +31,7 @@ import { translate } from '../../../helpers/l10n';
 interface Props {
   activation: boolean | undefined;
   compareToProfile: string | undefined;
+  languages: string[];
   onChange: (changes: Partial<Query>) => void;
   onToggle: (facet: FacetKey) => void;
   open: boolean;
@@ -38,7 +39,7 @@ interface Props {
   value: string | undefined;
 }
 
-export default class RepositoryFacet extends React.PureComponent<Props> {
+export default class ProfileFacet extends React.PureComponent<Props> {
   handleItemClick = (selected: string) => {
     const newValue = this.props.value === selected ? '' : selected;
     this.props.onChange({
@@ -144,8 +145,13 @@ export default class RepositoryFacet extends React.PureComponent<Props> {
   };
 
   render() {
-    const profiles = sortBy(
-      Object.values(this.props.referencedProfiles),
+    const { languages, referencedProfiles } = this.props;
+    let profiles = Object.values(referencedProfiles);
+    if (languages.length > 0) {
+      profiles = profiles.filter(profile => languages.includes(profile.language));
+    }
+    profiles = sortBy(
+      profiles,
       profile => profile.name.toLowerCase(),
       profile => profile.languageName
     );

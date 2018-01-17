@@ -33,7 +33,8 @@ import {
   OpenFacets,
   getServerFacet,
   getAppFacet,
-  Actives
+  Actives,
+  getOpen
 } from '../query';
 import { searchRules, getRulesApp } from '../../../api/rules';
 import { Paging, Rule } from '../../../app/types';
@@ -47,6 +48,7 @@ import FiltersHeader from '../../../components/common/FiltersHeader';
 import FacetsList from './FacetsList';
 import { searchQualityProfiles, Profile } from '../../../api/quality-profiles';
 import { scrollToElement } from '../../../helpers/scrolling';
+import BulkChange from './BulkChange';
 
 const PAGE_SIZE = 100;
 
@@ -102,14 +104,21 @@ export default class App extends React.PureComponent<Props, State> {
   }
 
   componentWillReceiveProps(nextProps: Props) {
-    this.setState({ query: parseQuery(nextProps.location.query) });
+    const openRule = this.getOpenRule(nextProps, this.state.rules);
+    if (openRule && openRule.key !== this.state.selected) {
+      this.setState({ selected: openRule.key });
+    }
+    this.setState({ openRule, query: parseQuery(nextProps.location.query) });
   }
 
   componentDidUpdate(prevProps: Props, prevState: State) {
     if (!areQueriesEqual(prevProps.location.query, this.props.location.query)) {
       this.fetchFirstRules();
     }
-    if (prevState.selected !== this.state.selected) {
+    if (
+      !this.state.openRule &&
+      (prevState.selected !== this.state.selected || prevState.openRule)
+    ) {
       // if user simply selected another issue
       // or if he went from the source code back to the list of issues
       this.scrollToSelectedRule();
@@ -136,10 +145,23 @@ export default class App extends React.PureComponent<Props, State> {
       this.selectNextRule();
       return false;
     });
+    key('right', 'coding-rules', () => {
+      this.openSelectedRule();
+      return false;
+    });
+    key('left', 'coding-rules', () => {
+      this.closeRule();
+      return false;
+    });
   };
 
   detachShortcuts = () => {
     key.deleteScope('coding-rules');
+  };
+
+  getOpenRule = (props: Props, rules: Rule[]) => {
+    const open = getOpen(props.location.query);
+    return open && rules.find(rule => rule.key === open);
   };
 
   getFacetsToFetch = () => {
@@ -208,18 +230,15 @@ export default class App extends React.PureComponent<Props, State> {
       }
     );
 
-  fetchRules = (query?: RawQuery) => {
+  fetchFirstRules = (query?: RawQuery) => {
     this.setState({ loading: true });
     this.makeFetchRequest(query).then(({ actives, facets, paging, rules }) => {
       if (this.mounted) {
-        const selected = rules.length > 0 ? rules[0].key : undefined;
-        this.setState({ actives, facets, loading: false, paging, rules, selected });
+        const openRule = this.getOpenRule(this.props, rules);
+        const selected = rules.length > 0 ? (openRule && openRule.key) || rules[0].key : undefined;
+        this.setState({ actives, facets, loading: false, openRule, paging, rules, selected });
       }
     }, this.stopLoading);
-  };
-
-  fetchFirstRules = () => {
-    this.fetchRules();
   };
 
   fetchMoreRules = () => {
@@ -262,7 +281,11 @@ export default class App extends React.PureComponent<Props, State> {
     const { rules } = this.state;
     const selectedIndex = this.getSelectedIndex();
     if (rules && selectedIndex !== undefined && selectedIndex < rules.length - 1) {
-      this.setState({ selected: rules[selectedIndex + 1].key });
+      if (this.state.openRule) {
+        this.openRule(rules[selectedIndex + 1].key);
+      } else {
+        this.setState({ selected: rules[selectedIndex + 1].key });
+      }
     }
   };
 
@@ -270,8 +293,45 @@ export default class App extends React.PureComponent<Props, State> {
     const { rules } = this.state;
     const selectedIndex = this.getSelectedIndex();
     if (rules && selectedIndex !== undefined && selectedIndex > 0) {
-      this.setState({ selected: rules[selectedIndex - 1].key });
+      if (this.state.openRule) {
+        this.openRule(rules[selectedIndex - 1].key);
+      } else {
+        this.setState({ selected: rules[selectedIndex - 1].key });
+      }
     }
+  };
+
+  openRule = (rule: string) => {
+    const path = {
+      pathname: this.props.location.pathname,
+      query: {
+        ...serializeQuery(this.state.query),
+        open: rule
+      }
+    };
+    if (this.state.openRule) {
+      this.context.router.replace(path);
+    } else {
+      this.context.router.push(path);
+    }
+  };
+
+  openSelectedRule = () => {
+    const { selected } = this.state;
+    if (selected) {
+      this.openRule(selected);
+    }
+  };
+
+  closeRule = () => {
+    this.context.router.push({
+      pathname: this.props.location.pathname,
+      query: {
+        ...serializeQuery(this.state.query),
+        open: undefined
+      }
+    });
+    this.scrollToSelectedRule(false);
   };
 
   scrollToSelectedRule = (smooth = true) => {
@@ -357,9 +417,10 @@ export default class App extends React.PureComponent<Props, State> {
                       onFilterChange={this.handleFilterChange}
                       organization={this.props.organization && this.props.organization.key}
                       openFacets={this.state.openFacets}
+                      query={this.state.query}
                       referencedProfiles={this.state.referencedProfiles}
                       referencedRepositories={this.state.referencedRepositories}
-                      query={this.state.query}
+                      selectedProfile={this.getSelectedProfile()}
                     />
                   </div>
                 </div>
@@ -371,6 +432,13 @@ export default class App extends React.PureComponent<Props, State> {
             <div className="layout-page-header-panel layout-page-main-header">
               <div className="layout-page-header-panel-inner layout-page-main-header-inner">
                 <div className="layout-page-main-inner">
+                  {this.state.paging && (
+                    <BulkChange
+                      query={this.state.query}
+                      referencedProfiles={this.state.referencedProfiles}
+                      total={this.state.paging.total}
+                    />
+                  )}
                   <PageActions
                     loading={this.state.loading}
                     onReload={this.handleReload}
@@ -390,6 +458,7 @@ export default class App extends React.PureComponent<Props, State> {
                     <RuleListItem
                       activation={this.getRuleActivation(rule.key)}
                       key={rule.key}
+                      onClick={this.openRule}
                       onFilterChange={this.handleFilterChange}
                       rule={rule}
                       selected={rule.key === this.state.selected}

@@ -41,11 +41,14 @@ interface Props {
   query: Query;
   referencedProfiles: { [profile: string]: Profile };
   referencedRepositories: { [repository: string]: { key: string; language: string; name: string } };
+  selectedProfile?: Profile;
 }
 
 export default function FacetsList(props: Props) {
-  // TODO: check that profile is inherited
-  const inheritanceDisabled = !props.query.profile || !!props.query.compareToProfile;
+  const inheritanceDisabled =
+    props.query.compareToProfile !== undefined ||
+    props.selectedProfile === undefined ||
+    !props.selectedProfile.isInherited;
   const activationSeverityDisabled = inheritanceDisabled || !props.query.activation;
 
   return (
@@ -109,6 +112,7 @@ export default function FacetsList(props: Props) {
       <ProfileFacet
         activation={props.query.activation}
         compareToProfile={props.query.compareToProfile}
+        languages={props.query.languages}
         onChange={props.onFilterChange}
         onToggle={props.onFacetToggle}
         open={!!props.openFacets.profile}

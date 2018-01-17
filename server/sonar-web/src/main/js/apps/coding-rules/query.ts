@@ -114,7 +114,7 @@ export function serializeQuery(query: Query): RawQuery {
 }
 
 export function areQueriesEqual(a: RawQuery, b: RawQuery) {
-  return queriesEqual(a, b);
+  return queriesEqual(parseQuery(a), parseQuery(b));
 }
 
 export function shouldRequestFacet(facet: FacetKey) {
@@ -135,6 +135,10 @@ export function getServerFacet(facet: FacetKey) {
 
 export function getAppFacet(serverFacet: string): FacetKey {
   return serverFacet === 'active_severities' ? 'activationSeverities' : (serverFacet as FacetKey);
+}
+
+export function getOpen(query: RawQuery) {
+  return query.open;
 }
 
 function parseAsInheritance(value?: string): Inheritance | undefined {
