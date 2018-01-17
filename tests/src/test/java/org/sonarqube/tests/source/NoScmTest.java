@@ -20,7 +20,6 @@
 package org.sonarqube.tests.source;
 
 import com.sonar.orchestrator.Orchestrator;
-import com.sonar.orchestrator.build.BuildResult;
 import com.sonar.orchestrator.build.SonarScanner;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +27,6 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -40,14 +38,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.sonarqube.tests.source.SourceSuite.ORCHESTRATOR;
 import static util.ItUtils.projectDir;
 
-// FIXME GJT : functional test
-// FIXME GJT : refactor common parts w ScmTest
-// FIXME GJT : assert on measures + new code measure (nb of new lines)
-
 public class NoScmTest {
+
+  private final String PROJECT_DIRECTORY = "xoo-sample-without-scm";
+  private final String PROJECT_NAME = "sample-without-scm";
+  private final String PATH_TO_SAMPLE = "src/main/xoo/sample/Sample.xoo";
+  private final String FILE_TO_ANALYSE = PROJECT_NAME + ":" + PATH_TO_SAMPLE;
+  private final String PATH_TO_INACTIVATED_SAMPLE = "src/main/xoo/sample/Sample.xoo.new";
 
   @ClassRule
   public static Orchestrator orchestrator = ORCHESTRATOR;
+
   private SourceScmWS ws = new SourceScmWS(orchestrator);
 
   @Rule
@@ -57,31 +58,60 @@ public class NoScmTest {
   public Tester tester = new Tester(orchestrator);
 
   @Test
-  public void two_analysis_without_scm() throws ParseException, IOException {
+  public void two_analysis_without_scm_on_same_file() throws ParseException, IOException {
 
-    File origin = projectDir("scm/xoo-sample-without-scm");
-    copyDirectory(origin.getParentFile(), temporaryFolder.getRoot());
-    File source = new File(temporaryFolder.getRoot(), "xoo-sample-without-scm");
-
-    SonarScanner build = SonarScanner.create(source);
+    File source = disposableWorkspaceFor(PROJECT_DIRECTORY);
 
     // First run
-    orchestrator.executeBuild(build);
-    Map<Integer, LineData> scmData = ws.getScmData("sample-without-scm:src/main/xoo/sample/Sample.xoo");
+    SonarScanner scanner = SonarScanner.create(source);
+
+    orchestrator.executeBuild(scanner);
+    Map<Integer, LineData> scmData1 = ws.getScmData(FILE_TO_ANALYSE);
+
+    assertThat(scmData1.size()).isEqualTo(1);
+    assertThat(scmData1.get(1).revision).isEmpty();
+    assertThat(scmData1.get(1).author).isEmpty();
+    assertThat(scmData1.get(1).date).isInSameMinuteWindowAs(new Date());
+
+    // 2nd run
+    scanner = SonarScanner.create(source);
+
+    orchestrator.executeBuild(scanner);
+    Map<Integer, LineData> scmData2 = ws.getScmData(FILE_TO_ANALYSE);
+
+    assertThat(scmData2.size()).isEqualTo(1);
+    assertThat(scmData2.get(1).revision).isEmpty();
+    assertThat(scmData2.get(1).author).isEmpty();
+    assertThat(scmData2.get(1).date).isEqualTo(scmData1.get(1).date);
+
+  }
+
+  @Test
+  public void two_analysis_without_scm_on_modified_file() throws ParseException, IOException {
+
+    File source = disposableWorkspaceFor(PROJECT_DIRECTORY);
+
+    // First run
+    SonarScanner scanner = SonarScanner.create(source);
+
+    orchestrator.executeBuild(scanner);
+    Map<Integer, LineData> scmData = ws.getScmData(FILE_TO_ANALYSE);
 
     assertThat(scmData.size()).isEqualTo(1);
     assertThat(scmData.get(1).revision).isEmpty();
     assertThat(scmData.get(1).author).isEmpty();
     assertThat(scmData.get(1).date).isInSameMinuteWindowAs(new Date());
 
-    // Swap Files
-    File sample = new File(source, "src/main/xoo/sample/Sample.xoo");
+    // Swap analysed fo to a modified one
+    File sample = new File(source, PATH_TO_SAMPLE);
     sample.delete();
-    moveFile(new File(source, "src/main/xoo/sample/Sample.xoo.new"), sample);
+    moveFile(new File(source, PATH_TO_INACTIVATED_SAMPLE), sample);
 
     // 2nd run
-    orchestrator.executeBuild(build);
-    scmData = ws.getScmData("sample-without-scm:src/main/xoo/sample/Sample.xoo");
+    scanner = SonarScanner.create(source);
+
+    orchestrator.executeBuild(scanner);
+    scmData = ws.getScmData(FILE_TO_ANALYSE);
 
     assertThat(scmData.size()).isEqualTo(4);
     assertThat(scmData.get(1).revision).isEmpty();
@@ -94,29 +124,10 @@ public class NoScmTest {
 
   }
 
-  @Test
-  @Ignore
-  public void analysis_with_and_then_without_scm() throws ParseException, IOException {
-
-    File origin = projectDir("scm/xoo-sample-with-without-scm");
+  private File disposableWorkspaceFor(String project) throws IOException {
+    File origin = projectDir("scm/" + project);
     copyDirectory(origin.getParentFile(), temporaryFolder.getRoot());
-    File source = new File(temporaryFolder.getRoot(), "xoo-sample-without-scm");
-
-    SonarScanner build = SonarScanner.create(source);
-
-    // First run
-    BuildResult buildResult = orchestrator.executeBuild(build);
-    Map<Integer, LineData> scmData = ws.getScmData("sample-scm:src/main/xoo/sample/Sample.xoo");
-
-    // Swap Files
-    File sample = new File(source, "src/main/xoo/sample/Sample.xoo");
-    sample.delete();
-    moveFile(new File(source, "src/main/xoo/sample/Sample.xoo.new"), sample);
-
-    // 2nd run
-    buildResult = orchestrator.executeBuild(build);
-    scmData = ws.getScmData("sample-scm:src/main/xoo/sample/Sample.xoo");
-
+    return new File(temporaryFolder.getRoot(), project);
   }
 
 }
