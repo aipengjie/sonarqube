@@ -120,11 +120,9 @@ public class ScmInfoRepositoryImpl implements ScmInfoRepository {
     }
 
     // generate date for new/changed lines
-    Set<Integer> newOrChangedLines = sourceLinesDiff.getNewOrChangedLines(file);
-    if (newOrChangedLines.isEmpty()) {
-      return Optional.of(scmInfo);
-    }
-    return Optional.of(GeneratedScmInfo.create(analysisMetadata.getAnalysisDate(), newOrChangedLines, scmInfo));
+    int[] matchingLines = sourceLinesDiff.getMatchingLines(file);
+
+    return Optional.of(GeneratedScmInfo.create(analysisMetadata.getAnalysisDate(), matchingLines, scmInfo));
   }
 
 }
