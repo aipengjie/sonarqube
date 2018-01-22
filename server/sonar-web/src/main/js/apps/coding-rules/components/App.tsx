@@ -49,16 +49,19 @@ import FacetsList from './FacetsList';
 import { searchQualityProfiles, Profile } from '../../../api/quality-profiles';
 import { scrollToElement } from '../../../helpers/scrolling';
 import BulkChange from './BulkChange';
+import RuleDetails from './RuleDetails';
 
 const PAGE_SIZE = 100;
 
 interface Props {
   location: { pathname: string; query: RawQuery };
   organization?: { key: string };
+  organizationsEnabled?: boolean;
 }
 
 interface State {
   actives?: Actives;
+  canWrite?: boolean;
   facets?: Facets;
   loading: boolean;
   openFacets: OpenFacets;
@@ -211,8 +214,9 @@ export default class App extends React.PureComponent<Props, State> {
       searchQualityProfiles({
         organization: this.props.organization && this.props.organization.key
       })
-    ]).then(([{ repositories }, { profiles }]) => {
+    ]).then(([{ canWrite, repositories }, { profiles }]) => {
       this.setState({
+        canWrite,
         referencedProfiles: keyBy(profiles, 'key'),
         referencedRepositories: keyBy(repositories, 'key')
       });
@@ -451,7 +455,14 @@ export default class App extends React.PureComponent<Props, State> {
 
             <div className="layout-page-main-inner">
               {this.state.openRule ? (
-                this.state.openRule.key
+                <RuleDetails
+                  allowCustomRules={!this.props.organizationsEnabled}
+                  canWrite={this.state.canWrite}
+                  onFilterChange={this.handleFilterChange}
+                  organization={this.props.organization && this.props.organization.key}
+                  referencedRepositories={this.state.referencedRepositories}
+                  ruleKey={this.state.openRule.key}
+                />
               ) : (
                 <>
                   {rules.map(rule => (

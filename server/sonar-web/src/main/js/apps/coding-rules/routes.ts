@@ -23,7 +23,7 @@ const routes = [
   {
     indexRoute: {
       getComponent(_: RouterState, callback: (err: any, component: RouteComponent) => any) {
-        import('./components/App').then(i => callback(null, i.default));
+        import('./components/AppContainer').then(i => callback(null, i.default));
       }
     }
   }

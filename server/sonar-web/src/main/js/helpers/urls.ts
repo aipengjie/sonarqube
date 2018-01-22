@@ -160,6 +160,13 @@ export function getDeprecatedActiveRulesUrl(query = {}, organization?: string | 
   return getRulesUrl({ ...query, ...baseQuery }, organization);
 }
 
+export function getRuleUrl(rule: string, organization?: string) {
+  const pathname = organization ? `/organizations/${organization}/rules` : '/coding_rules';
+  /* eslint-disable camelcase */
+  return { pathname, query: { rule_key: rule } };
+  /* eslint-enable camelcase */
+}
+
 export function getMarkdownHelpUrl(): string {
   return getBaseUrl() + '/markdown/help';
 }

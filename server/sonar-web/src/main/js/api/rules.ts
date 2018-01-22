@@ -19,9 +19,10 @@
  */
 import { post, getJSON, RequestData } from '../helpers/request';
 import throwGlobalError from '../app/utils/throwGlobalError';
-import { Rule } from '../app/types';
+import { Rule, RuleDetails, RuleActivation } from '../app/types';
 
 export interface GetRulesAppResponse {
+  canWrite?: boolean;
   repositories: Array<{ key: string; language: string; name: string }>;
 }
 
@@ -58,13 +59,11 @@ export function takeFacet(response: any, property: string) {
   return facet ? facet.values : [];
 }
 
-export interface GetRuleDetailsParameters {
+export function getRuleDetails(parameters: {
   actives?: boolean;
   key: string;
   organization?: string;
-}
-
-export function getRuleDetails(parameters: GetRuleDetailsParameters): Promise<any> {
+}): Promise<{ actives?: RuleActivation[]; rule: RuleDetails }> {
   return getJSON('/api/rules/show', parameters).catch(throwGlobalError);
 }
 

@@ -194,3 +194,43 @@ export interface Rule {
   tags?: string[];
   type: string;
 }
+
+export interface RuleDetails {
+  createdAt: string;
+  debtOverloaded?: boolean;
+  debtRemFnCoeff?: string;
+  debtRemFnOffset?: string;
+  debtRemFnType?: string;
+  defaultDebtRemFnOffset?: string;
+  defaultDebtRemFnType?: string;
+  defaultRemFnBaseEffort?: string;
+  defaultRemFnType?: string;
+  effortToFixDescription?: string;
+  htmlDesc?: string;
+  internalKey?: string;
+  isTemplate?: boolean;
+  key: string;
+  lang: string;
+  langName: string;
+  mdDesc?: string;
+  name: string;
+  params: any[];
+  remFnBaseEffort?: string;
+  remFnOverloaded?: boolean;
+  remFnType?: string;
+  repo: string;
+  severity: string;
+  status: string;
+  sysTags?: string[];
+  tags?: string[];
+  templateKey?: string;
+  type: string;
+}
+
+export interface RuleActivation {
+  createdAt: string;
+  inherit: string;
+  params: any[];
+  qProfile: string;
+  severity: string;
+}

@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import * as React from 'react';
-import { shallow } from 'enzyme';
-import TagsList from '../TagsList';
+import { connect } from 'react-redux';
+import App from './App';
+import { areThereCustomOrganizations } from '../../../store/rootReducer';
 
-const tags = ['foo', 'bar'];
+interface StateProps {
+  organizationsEnabled?: boolean;
+}
 
-it('should render with a list of tag', () => {
-  expect(shallow(<TagsList tags={tags} />)).toMatchSnapshot();
+const mapStateToProps = (state: any): StateProps => ({
+  organizationsEnabled: areThereCustomOrganizations(state)
 });
 
-it('should render with a caret on the right if update is allowed', () => {
-  expect(shallow(<TagsList allowUpdate={true} tags={tags} />)).toMatchSnapshot();
-});
+export default connect(mapStateToProps)(App);
