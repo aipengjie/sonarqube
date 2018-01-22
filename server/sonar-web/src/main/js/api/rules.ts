@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { post, getJSON, RequestData } from '../helpers/request';
+import { post, getJSON, RequestData, postJSON } from '../helpers/request';
 import throwGlobalError from '../app/utils/throwGlobalError';
 import { Rule, RuleDetails, RuleActivation } from '../app/types';
 
@@ -77,4 +77,21 @@ export function getRuleTags(parameters: {
 
 export function deleteRule(parameters: { key: string }) {
   return post('/api/rules/delete', parameters).catch(throwGlobalError);
+}
+
+export function updateRule(data: {
+  key: string;
+  markdown_description?: string;
+  markdown_note?: string;
+  name?: string;
+  organization?: string;
+  params?: string;
+  remediation_fn_base_effort?: string;
+  remediation_fn_type?: string;
+  remediation_fy_gap_multiplier?: string;
+  severity?: string;
+  status?: string;
+  tags?: string;
+}): Promise<RuleDetails> {
+  return postJSON('/api/rules/update', data).then(r => r.rule, throwGlobalError);
 }

@@ -207,12 +207,15 @@ export interface RuleDetails {
   defaultRemFnType?: string;
   effortToFixDescription?: string;
   htmlDesc?: string;
+  htmlNote?: string;
   internalKey?: string;
+  isCustom?: boolean;
   isTemplate?: boolean;
   key: string;
   lang: string;
   langName: string;
   mdDesc?: string;
+  mdNote?: string;
   name: string;
   params: any[];
   remFnBaseEffort?: string;

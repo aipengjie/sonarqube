@@ -17,13 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// @flow
-import React from 'react';
+import * as React from 'react';
 import { getMarkdownHelpUrl } from '../../helpers/urls';
 import { translate } from '../../helpers/l10n';
 
 export default class MarkdownTips extends React.PureComponent {
-  handleClick(evt /*: MouseEvent */) {
+  handleClick(evt: React.SyntheticEvent<HTMLAnchorElement>) {
     evt.preventDefault();
     window.open(getMarkdownHelpUrl(), 'Markdown', 'height=300,width=600,scrollbars=1,resizable=1');
   }

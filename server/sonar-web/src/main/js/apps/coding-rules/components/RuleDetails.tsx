@@ -20,7 +20,7 @@
 import * as React from 'react';
 import { Link } from 'react-router';
 import { Query } from '../query';
-import { getRuleDetails } from '../../../api/rules';
+import { getRuleDetails, updateRule } from '../../../api/rules';
 import { RuleActivation, RuleDetails as IRuleDetails } from '../../../app/types';
 import { translate } from '../../../helpers/l10n';
 import LinkIcon from '../../../components/icons-components/LinkIcon';
@@ -34,6 +34,8 @@ import DeferredSpinner from '../../../components/common/DeferredSpinner';
 import TagsList from '../../../components/tags/TagsList';
 import BubblePopupHelper from '../../../components/common/BubblePopupHelper';
 import RuleDetailsTagsPopup from './RuleDetailsTagsPopup';
+import MarkdownTips from '../../../components/common/MarkdownTips';
+import RemoveExtendedDescriptionModal from './RemoveExtendedDescriptionModal';
 
 interface Props {
   allowCustomRules?: boolean;
@@ -46,14 +48,25 @@ interface Props {
 
 interface State {
   actives?: RuleActivation[];
+  extendedDescription: string;
+  extendedDescriptionForm: boolean;
+  extendingDescritption: boolean;
   loading: boolean;
+  removeExtendedDescriptionModal: boolean;
   ruleDetails?: IRuleDetails;
   tagsPopup: boolean;
 }
 
 export default class RuleDetails extends React.PureComponent<Props, State> {
   mounted: boolean;
-  state: State = { loading: true, tagsPopup: false };
+  state: State = {
+    extendedDescription: '',
+    extendedDescriptionForm: false,
+    extendingDescritption: false,
+    loading: true,
+    removeExtendedDescriptionModal: false,
+    tagsPopup: false
+  };
 
   componentDidMount() {
     this.mounted = true;
@@ -104,6 +117,75 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     this.setState(state => ({ ruleDetails: { ...state.ruleDetails, tags } }));
   };
 
+  handleExtendDescriptionClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.setState(state => ({
+      // set `extendedDescription` to the current `mdNote` each time the form is open
+      extendedDescription: (state.ruleDetails && state.ruleDetails.mdNote) || '',
+      extendedDescriptionForm: true
+    }));
+  };
+
+  handleExtendedDescriptionChange = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const { value } = event.currentTarget;
+    this.setState({ extendedDescription: value });
+  };
+
+  handleCancelExtendDescriptionClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.setState({ extendedDescriptionForm: false });
+  };
+
+  handleSaveExtendedDescriptionClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.updateExtendedDescription(this.state.extendedDescription);
+  };
+
+  handleRemoveExtendedDescriptionClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    this.setState({ removeExtendedDescriptionModal: true });
+  };
+
+  handleCancelRemoveExtendedDescription = () => {
+    this.setState({ removeExtendedDescriptionModal: false });
+  };
+
+  handleConfirmRemoveExtendedDescription = () => {
+    this.setState({ removeExtendedDescriptionModal: false });
+    this.updateExtendedDescription('');
+  };
+
+  updateExtendedDescription = (text: string) => {
+    this.setState({ extendingDescritption: true });
+
+    updateRule({
+      key: this.props.ruleKey,
+      /* eslint-disable camelcase */
+      markdown_note: text,
+      /* eslint-enable camelcase*/
+      organization: this.props.organization
+    }).then(
+      ruleDetails => {
+        if (this.mounted) {
+          this.setState({
+            extendingDescritption: false,
+            extendedDescriptionForm: false,
+            ruleDetails
+          });
+        }
+      },
+      () => {
+        if (this.mounted) {
+          this.setState({ extendingDescritption: false });
+        }
+      }
+    );
+  };
+
   render() {
     const { ruleDetails } = this.state;
 
@@ -112,7 +194,7 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     }
 
     const { canWrite = false, referencedRepositories } = this.props;
-    const { sysTags = [], tags = [] } = ruleDetails;
+    const { htmlDesc = '', sysTags = [], tags = [] } = ruleDetails;
     const allTags = [...sysTags, ...tags];
 
     const isCustom = !!ruleDetails.templateKey;
@@ -240,7 +322,96 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
             </ul>
           </div>
 
-          <div className="js-rule-description" />
+          <div className="js-rule-description">
+            <div
+              className="coding-rules-detail-description rule-desc markdown"
+              dangerouslySetInnerHTML={{ __html: htmlDesc }}
+            />
+
+            {!ruleDetails.isCustom && (
+              <div className="coding-rules-detail-description coding-rules-detail-description-extra">
+                {!this.state.extendedDescriptionForm && (
+                  <div id="coding-rules-detail-description-extra">
+                    {ruleDetails.htmlNote !== undefined && (
+                      <div
+                        className="rule-desc spacer-bottom markdown"
+                        dangerouslySetInnerHTML={{ __html: ruleDetails.htmlNote }}
+                      />
+                    )}
+                    {canWrite && (
+                      <button
+                        id="coding-rules-detail-extend-description"
+                        onClick={this.handleExtendDescriptionClick}>
+                        {translate('coding_rules.extend_description')}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {canWrite &&
+                  this.state.extendedDescriptionForm && (
+                    <div className="coding-rules-detail-extend-description-form">
+                      <table className="width100">
+                        <tbody>
+                          <tr>
+                            <td className="width100" colSpan={2}>
+                              <textarea
+                                autoFocus={true}
+                                id="coding-rules-detail-extend-description-text"
+                                onChange={this.handleExtendedDescriptionChange}
+                                rows={4}
+                                style={{ width: '100%', marginBottom: 4 }}
+                                value={this.state.extendedDescription}
+                              />
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <button
+                                disabled={this.state.extendingDescritption}
+                                id="coding-rules-detail-extend-description-submit"
+                                onClick={this.handleSaveExtendedDescriptionClick}>
+                                {translate('save')}
+                              </button>
+                              {ruleDetails.mdNote !== undefined && (
+                                <>
+                                  <button
+                                    className="button-red spacer-left"
+                                    disabled={this.state.extendingDescritption}
+                                    id="coding-rules-detail-extend-description-remove"
+                                    onClick={this.handleRemoveExtendedDescriptionClick}>
+                                    {translate('remove')}
+                                  </button>
+                                  {this.state.removeExtendedDescriptionModal && (
+                                    <RemoveExtendedDescriptionModal
+                                      onCancel={this.handleCancelRemoveExtendedDescription}
+                                      onSubmit={this.handleConfirmRemoveExtendedDescription}
+                                    />
+                                  )}
+                                </>
+                              )}
+                              <button
+                                className="spacer-left button-link"
+                                disabled={this.state.extendingDescritption}
+                                id="coding-rules-detail-extend-description-cancel"
+                                onClick={this.handleCancelExtendDescriptionClick}>
+                                {translate('cancel')}
+                              </button>
+                              {this.state.extendingDescritption && (
+                                <i className="spinner spacer-left" />
+                              )}
+                            </td>
+                            <td className="text-right">
+                              <MarkdownTips />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+              </div>
+            )}
+          </div>
 
           <div className="js-rule-parameters" />
 
