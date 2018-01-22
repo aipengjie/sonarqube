@@ -194,7 +194,7 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     }
 
     const { canWrite = false, referencedRepositories } = this.props;
-    const { htmlDesc = '', sysTags = [], tags = [] } = ruleDetails;
+    const { htmlDesc = '', params = [], sysTags = [], tags = [] } = ruleDetails;
     const allTags = [...sysTags, ...tags];
 
     const isCustom = !!ruleDetails.templateKey;
@@ -413,7 +413,44 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
             )}
           </div>
 
-          <div className="js-rule-parameters" />
+          {params.length > 0 && (
+            <div className="js-rule-parameters">
+              <h3 className="coding-rules-detail-title">{translate('coding_rules.parameters')}</h3>
+              <table className="coding-rules-detail-parameters">
+                <tbody>
+                  {params.map(param => (
+                    <tr className="coding-rules-detail-parameter" key={param.key}>
+                      <td className="coding-rules-detail-parameter-name">{param.key}</td>
+                      <td className="coding-rules-detail-parameter-description">
+                        <p dangerouslySetInnerHTML={{ __html: param.htmlDesc || '' }} />
+                        {ruleDetails.templateKey !== undefined ? (
+                          <div className="note spacer-top">
+                            {param.defaultValue ? (
+                              <span className="coding-rules-detail-parameter-value">
+                                {param.defaultValue}
+                              </span>
+                            ) : (
+                              translate('coding_rules.parameter.empty')
+                            )}
+                          </div>
+                        ) : (
+                          !!param.defaultValue && (
+                            <div className="note spacer-top">
+                              {translate('coding_rules.parameters.default_value')}
+                              <br />
+                              <span className="coding-rules-detail-parameter-value">
+                                {param.defaultValue}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {isEditable && (
             <div className="coding-rules-detail-description">

@@ -217,7 +217,7 @@ export interface RuleDetails {
   mdDesc?: string;
   mdNote?: string;
   name: string;
-  params: any[];
+  params?: RuleParameter[];
   remFnBaseEffort?: string;
   remFnOverloaded?: boolean;
   remFnType?: string;
@@ -236,4 +236,11 @@ export interface RuleActivation {
   params: any[];
   qProfile: string;
   severity: string;
+}
+
+export interface RuleParameter {
+  defaultValue?: string;
+  htmlDesc?: string;
+  key: string;
+  type: string;
 }
