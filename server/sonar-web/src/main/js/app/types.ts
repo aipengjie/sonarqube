@@ -188,6 +188,7 @@ export interface Rule {
   lang: string;
   langName: string;
   name: string;
+  params?: RuleParameter[];
   severity?: string;
   status: string;
   sysTags?: string[];

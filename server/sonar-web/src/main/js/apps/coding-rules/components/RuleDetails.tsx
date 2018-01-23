@@ -21,8 +21,8 @@ import * as React from 'react';
 import { Link } from 'react-router';
 import { Query } from '../query';
 import { Profile } from '../../../api/quality-profiles';
-import { getRuleDetails, updateRule } from '../../../api/rules';
-import { RuleActivation, RuleDetails as IRuleDetails } from '../../../app/types';
+import { getRuleDetails, updateRule, searchRules } from '../../../api/rules';
+import { RuleActivation, RuleDetails as IRuleDetails, Rule } from '../../../app/types';
 import BuiltInQualityProfileBadge from '../../quality-profiles/components/BuiltInQualityProfileBadge';
 import { translate, translateWithParameters } from '../../../helpers/l10n';
 import LinkIcon from '../../../components/icons-components/LinkIcon';
@@ -51,6 +51,8 @@ interface Props {
 
 interface State {
   actives?: RuleActivation[];
+  customRules?: Rule[];
+  customRulesLoading?: boolean;
   extendedDescription: string;
   extendedDescriptionForm: boolean;
   extendingDescritption: boolean;
@@ -96,11 +98,35 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
       ({ actives, rule }) => {
         if (this.mounted) {
           this.setState({ actives, loading: false, ruleDetails: rule });
+          if (rule.isTemplate) {
+            this.fetchCustomRules();
+          }
         }
       },
       () => {
         if (this.mounted) {
           this.setState({ loading: false });
+        }
+      }
+    );
+  };
+
+  fetchCustomRules = () => {
+    this.setState({ customRulesLoading: true });
+    searchRules({
+      /* eslint-disable camelcase */
+      template_key: this.props.ruleKey,
+      /* eslint-enable camelcase */
+      f: 'name,severity,params'
+    }).then(
+      ({ rules }) => {
+        if (this.mounted) {
+          this.setState({ customRules: rules, customRulesLoading: false });
+        }
+      },
+      () => {
+        if (this.mounted) {
+          this.setState({ customRulesLoading: false });
         }
       }
     );
@@ -328,13 +354,18 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
   };
 
   render() {
-    const { actives, ruleDetails } = this.state;
+    const { actives, customRules, customRulesLoading, ruleDetails } = this.state;
 
     if (!ruleDetails) {
       return <div className="coding-rule-details" />;
     }
 
-    const { canWrite = false, referencedProfiles, referencedRepositories } = this.props;
+    const {
+      allowCustomRules,
+      canWrite = false,
+      referencedProfiles,
+      referencedRepositories
+    } = this.props;
     const { htmlDesc = '', params = [], sysTags = [], tags = [] } = ruleDetails;
     const allTags = [...sysTags, ...tags];
 
@@ -608,43 +639,107 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
             </div>
           )}
 
-          <div className="js-rule-custom-rules coding-rule-section" />
+          {ruleDetails.isTemplate && (
+            <div className="js-rule-custom-rules coding-rule-section">
+              <div className="coding-rules-detail-custom-rules-section">
+                <div className="coding-rule-section-separator" />
 
-          <div className="js-rule-profiles coding-rule-section">
-            <div className="coding-rules-detail-quality-profiles-section">
-              <div className="coding-rule-section-separator" />
+                <h3 className="coding-rules-detail-title">
+                  {translate('coding_rules.custom_rules')}
+                </h3>
 
-              <h3 className="coding-rules-detail-title">
-                {translate('coding_rules.quality_profiles')}
-              </h3>
+                {allowCustomRules &&
+                  canWrite && (
+                    <button className="js-create-custom-rule spacer-left">
+                      {translate('coding_rules.create')}
+                    </button>
+                  )}
 
-              {canActivate &&
-                !ruleDetails.isTemplate && (
-                  <button id="coding-rules-quality-profile-activate" className="spacer-left">
-                    {translate('coding_rules.activate')}
-                  </button>
-                )}
+                <DeferredSpinner loading={customRulesLoading}>
+                  {customRules &&
+                    customRules.length > 0 && (
+                      <table
+                        id="coding-rules-detail-custom-rules"
+                        className="coding-rules-detail-list">
+                        <tbody>
+                          {customRules.map(customRule => (
+                            <tr key={customRule.key}>
+                              <td className="coding-rules-detail-list-name">
+                                <Link to={getRuleUrl(customRule.key, this.props.organization)}>
+                                  {customRule.name}
+                                </Link>
+                              </td>
 
-              {ruleDetails.isTemplate && (
-                <div className="alert alert-warning">
-                  {translate('coding_rules.quality_profiles.template_caption')}
-                </div>
-              )}
+                              <td className="coding-rules-detail-list-severity">
+                                <SeverityHelper severity={customRule.severity} />
+                              </td>
 
-              {actives &&
-                actives.length > 0 && (
-                  <table
-                    id="coding-rules-detail-quality-profiles"
-                    className="coding-rules-detail-quality-profiles width100">
-                    <tbody>
-                      {actives.map(activation =>
-                        this.renderActivation(activation, actives, ruleDetails)
-                      )}
-                    </tbody>
-                  </table>
-                )}
+                              <td className="coding-rules-detail-list-parameters">
+                                {customRule.params &&
+                                  customRule.params
+                                    .filter(param => param.defaultValue)
+                                    .map(param => (
+                                      <div
+                                        className="coding-rules-detail-list-parameter"
+                                        key={param.key}>
+                                        <span className="key">{param.key}</span>
+                                        <span className="sep">:&nbsp;</span>
+                                        <span className="value" title={param.defaultValue}>
+                                          {param.defaultValue}
+                                        </span>
+                                      </div>
+                                    ))}
+                              </td>
+
+                              {allowCustomRules &&
+                                canWrite && (
+                                  <td className="coding-rules-detail-list-actions">
+                                    <button className="js-delete-custom-rule button-red">
+                                      {translate('delete')}
+                                    </button>
+                                  </td>
+                                )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                </DeferredSpinner>
+              </div>
             </div>
-          </div>
+          )}
+
+          {!ruleDetails.isTemplate && (
+            <div className="js-rule-profiles coding-rule-section">
+              <div className="coding-rules-detail-quality-profiles-section">
+                <div className="coding-rule-section-separator" />
+
+                <h3 className="coding-rules-detail-title">
+                  {translate('coding_rules.quality_profiles')}
+                </h3>
+
+                {canActivate &&
+                  !ruleDetails.isTemplate && (
+                    <button id="coding-rules-quality-profile-activate" className="spacer-left">
+                      {translate('coding_rules.activate')}
+                    </button>
+                  )}
+
+                {actives &&
+                  actives.length > 0 && (
+                    <table
+                      id="coding-rules-detail-quality-profiles"
+                      className="coding-rules-detail-quality-profiles width100">
+                      <tbody>
+                        {actives.map(activation =>
+                          this.renderActivation(activation, actives, ruleDetails)
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+              </div>
+            </div>
+          )}
 
           <div className="js-rule-issues coding-rule-section" />
         </DeferredSpinner>
