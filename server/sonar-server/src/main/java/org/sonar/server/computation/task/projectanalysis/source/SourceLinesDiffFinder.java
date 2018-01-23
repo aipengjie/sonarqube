@@ -33,7 +33,13 @@ public class SourceLinesDiffFinder {
     this.report = report;
   }
 
-  public int[] findExistingLines() {
+  /**
+   * Creates a diff between the file in the database and the file in the report using Myers' algorithm, and links matching lines between
+   * both files.
+   * @return an array with one entry for each line in the report. Those entries point either to a line in the database, or to 0, 
+   * in which case it means the line was added.
+   */
+  public int[] findMatchingLines() {
     int[] index = new int[report.size()];
 
     int dbLine = database.size();

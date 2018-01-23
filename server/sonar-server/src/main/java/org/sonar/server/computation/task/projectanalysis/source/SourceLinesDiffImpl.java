@@ -62,7 +62,7 @@ public class SourceLinesDiffImpl implements SourceLinesDiff {
     }
     report = linesHashesComputer.getLineHashes();
 
-    return new SourceLinesDiffFinder(database, report).findExistingLines();
+    return new SourceLinesDiffFinder(database, report).findMatchingLines();
 
   }
 

@@ -44,7 +44,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 3");
     report.add("line - 4");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 3, 4, 5);
 
@@ -77,7 +77,7 @@ public class SourceLinesDiffFinderTest {
     report.add("    }\n");
     report.add("}\n");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
     assertThat(diff).containsExactly(1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 5, 6, 7);
 
   }
@@ -97,7 +97,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 2");
     report.add("line - 3");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(0, 0, 3, 4);
 
@@ -118,7 +118,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 2 - modified");
     report.add("line - 3 - modified");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 0, 0);
 
@@ -143,7 +143,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 4");
     report.add("line - 5");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 0, 0, 5, 6);
 
@@ -164,7 +164,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 1");
     report.add("line - 2");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(0, 0, 1, 2, 3);
 
@@ -187,7 +187,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 2");
     report.add("line - 3");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 0, 0, 3, 4);
 
@@ -208,7 +208,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - new");
     report.add("line - new");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 3, 0, 0);
 
@@ -229,7 +229,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 1");
     report.add("line - 2");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 3);
 
@@ -252,7 +252,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 4");
     report.add("line - 5");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(1, 2, 5, 6);
   }
@@ -270,7 +270,7 @@ public class SourceLinesDiffFinderTest {
     report.add("line - 2");
     report.add("line - 3");
 
-    int[] diff = new SourceLinesDiffFinder(database, report).findExistingLines();
+    int[] diff = new SourceLinesDiffFinder(database, report).findMatchingLines();
 
     assertThat(diff).containsExactly(3, 4);
 
