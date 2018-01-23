@@ -460,6 +460,7 @@ export default class App extends React.PureComponent<Props, State> {
                   canWrite={this.state.canWrite}
                   onFilterChange={this.handleFilterChange}
                   organization={this.props.organization && this.props.organization.key}
+                  referencedProfiles={this.state.referencedProfiles}
                   referencedRepositories={this.state.referencedRepositories}
                   ruleKey={this.state.openRule.key}
                 />

@@ -233,9 +233,9 @@ export interface RuleDetails {
 export interface RuleActivation {
   createdAt: string;
   inherit: string;
-  params: any[];
+  params: Array<{ key: string; value: string }>;
   qProfile: string;
-  severity: string;
+  severity?: string;
 }
 
 export interface RuleParameter {

@@ -20,11 +20,13 @@
 import * as React from 'react';
 import { Link } from 'react-router';
 import { Query } from '../query';
+import { Profile } from '../../../api/quality-profiles';
 import { getRuleDetails, updateRule } from '../../../api/rules';
 import { RuleActivation, RuleDetails as IRuleDetails } from '../../../app/types';
-import { translate } from '../../../helpers/l10n';
+import BuiltInQualityProfileBadge from '../../quality-profiles/components/BuiltInQualityProfileBadge';
+import { translate, translateWithParameters } from '../../../helpers/l10n';
 import LinkIcon from '../../../components/icons-components/LinkIcon';
-import { getRuleUrl } from '../../../helpers/urls';
+import { getRuleUrl, getQualityProfileUrl } from '../../../helpers/urls';
 import SimilarRulesFilter from './SimilarRulesFilter';
 import Tooltip from '../../../components/controls/Tooltip';
 import IssueTypeIcon from '../../../components/ui/IssueTypeIcon';
@@ -42,6 +44,7 @@ interface Props {
   canWrite?: boolean;
   onFilterChange: (changes: Partial<Query>) => void;
   organization?: string;
+  referencedProfiles: { [profile: string]: Profile };
   referencedRepositories: { [repository: string]: { key: string; language: string; name: string } };
   ruleKey: string;
 }
@@ -186,14 +189,152 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     );
   };
 
+  renderActivation = (
+    activation: RuleActivation,
+    actives: RuleActivation[],
+    ruleDetails: IRuleDetails
+  ) => {
+    const profile = this.props.referencedProfiles[activation.qProfile];
+    if (!profile) {
+      return null;
+    }
+
+    const parentActivation = actives.find(x => x.qProfile === profile.parentKey);
+    const getOriginalValue = (key: string) => {
+      const param = parentActivation && parentActivation.params.find(param => param.key === key);
+      return param && param.value;
+    };
+
+    return (
+      <tr key={profile.key}>
+        <td className="coding-rules-detail-quality-profile-name">
+          <Link to={getQualityProfileUrl(profile.name, profile.language, this.props.organization)}>
+            {profile.name}
+          </Link>
+          {profile.isBuiltIn && <BuiltInQualityProfileBadge className="spacer-left" />}
+          {profile.parentName !== undefined && (
+            <div className="coding-rules-detail-quality-profile-inheritance">
+              {activation.inherit === 'OVERRIDES' && (
+                <i
+                  className="icon-inheritance icon-inheritance-overridden"
+                  title={translateWithParameters(
+                    'coding_rules.overrides',
+                    profile.name,
+                    profile.parentName
+                  )}
+                />
+              )}
+              {activation.inherit === 'INHERITED' && (
+                <i
+                  className="icon-inheritance"
+                  title={translateWithParameters(
+                    'coding_rules.inherits',
+                    profile.name,
+                    profile.parentName
+                  )}
+                />
+              )}
+              {['OVERRIDES', 'INHERITED'].includes(activation.inherit) && (
+                <Link
+                  className="link-base-color spacer-left"
+                  to={getQualityProfileUrl(
+                    profile.parentName,
+                    profile.language,
+                    this.props.organization
+                  )}>
+                  {profile.parentName}
+                </Link>
+              )}
+            </div>
+          )}
+        </td>
+        {activation.severity ? (
+          <>
+            <td className="coding-rules-detail-quality-profile-severity">
+              {/* TODO l10n */}
+              <Tooltip overlay="Activation severity">
+                <span>
+                  <SeverityHelper severity={activation.severity} />
+                </span>
+              </Tooltip>
+              {parentActivation !== undefined &&
+                parentActivation.severity !== undefined &&
+                activation.severity !== parentActivation.severity && (
+                  <div className="coding-rules-detail-quality-profile-inheritance">
+                    {translate('coding_rules.original')}{' '}
+                    {translate('severity', parentActivation.severity)}
+                  </div>
+                )}
+            </td>
+            {ruleDetails.templateKey === undefined && (
+              <td className="coding-rules-detail-quality-profile-parameters">
+                {activation.params.map(param => (
+                  <div className="coding-rules-detail-quality-profile-parameter" key={param.key}>
+                    <span className="key">{param.key}</span>
+                    <span className="sep">:&nbsp;</span>
+                    <span className="value" title={param.value}>
+                      {param.value}
+                    </span>
+                    {parentActivation &&
+                      param.value !== getOriginalValue(param.key) && (
+                        <div className="coding-rules-detail-quality-profile-inheritance">
+                          {translate('coding_rules.original')}&nbsp;<span className="value">
+                            {getOriginalValue(param.key)}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                ))}
+              </td>
+            )}
+            <td className="coding-rules-detail-quality-profile-actions">
+              {profile.actions &&
+                profile.actions.edit &&
+                !profile.isBuiltIn && (
+                  <>
+                    {!ruleDetails.isTemplate && (
+                      <button className="coding-rules-detail-quality-profile-change">
+                        {translate('change_verb')}
+                      </button>
+                    )}
+                    {profile.parentKey ? (
+                      activation.inherit === 'OVERRIDES' && (
+                        <button className="coding-rules-detail-quality-profile-revert button-red spacer-left">
+                          {translate('coding_rules.revert_to_parent_definition')}
+                        </button>
+                      )
+                    ) : (
+                      <button className="coding-rules-detail-quality-profile-deactivate button-red spacer-left">
+                        {translate('coding_rules.deactivate')}
+                      </button>
+                    )}
+                  </>
+                )}
+            </td>
+          </>
+        ) : (
+          // TODO is this case possible?
+          this.props.canWrite &&
+          !ruleDetails.isTemplate && (
+            <td className="coding-rules-detail-quality-profile-actions">
+              <button className="coding-rules-detail-quality-profile-activate">
+                {translate('coding_rules.activate')}
+              </button>
+            </td>
+          )
+        )}
+      </tr>
+    );
+  };
+
   render() {
-    const { ruleDetails } = this.state;
+    const { actives, ruleDetails } = this.state;
 
     if (!ruleDetails) {
       return <div className="coding-rule-details" />;
     }
 
-    const { canWrite = false, referencedRepositories } = this.props;
+    const { canWrite = false, referencedProfiles, referencedRepositories } = this.props;
     const { htmlDesc = '', params = [], sysTags = [], tags = [] } = ruleDetails;
     const allTags = [...sysTags, ...tags];
 
@@ -201,6 +342,10 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     const isEditable = canWrite && !!this.props.allowCustomRules && isCustom;
 
     const repository = referencedRepositories[ruleDetails.repo];
+
+    const canActivate = Object.values(referencedProfiles).some(profile =>
+      Boolean(profile.actions && profile.actions.edit && profile.language === ruleDetails.lang)
+    );
 
     return (
       <div className="coding-rule-details">
@@ -465,7 +610,41 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
 
           <div className="js-rule-custom-rules coding-rule-section" />
 
-          <div className="js-rule-profiles coding-rule-section" />
+          <div className="js-rule-profiles coding-rule-section">
+            <div className="coding-rules-detail-quality-profiles-section">
+              <div className="coding-rule-section-separator" />
+
+              <h3 className="coding-rules-detail-title">
+                {translate('coding_rules.quality_profiles')}
+              </h3>
+
+              {canActivate &&
+                !ruleDetails.isTemplate && (
+                  <button id="coding-rules-quality-profile-activate" className="spacer-left">
+                    {translate('coding_rules.activate')}
+                  </button>
+                )}
+
+              {ruleDetails.isTemplate && (
+                <div className="alert alert-warning">
+                  {translate('coding_rules.quality_profiles.template_caption')}
+                </div>
+              )}
+
+              {actives &&
+                actives.length > 0 && (
+                  <table
+                    id="coding-rules-detail-quality-profiles"
+                    className="coding-rules-detail-quality-profiles width100">
+                    <tbody>
+                      {actives.map(activation =>
+                        this.renderActivation(activation, actives, ruleDetails)
+                      )}
+                    </tbody>
+                  </table>
+                )}
+            </div>
+          </div>
 
           <div className="js-rule-issues coding-rule-section" />
         </DeferredSpinner>
