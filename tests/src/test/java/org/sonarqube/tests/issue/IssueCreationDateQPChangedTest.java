@@ -146,10 +146,9 @@ public class IssueCreationDateQPChangedTest extends AbstractIssueTest {
     analysis(QProfile.ONE_RULE, SourceCode.CHANGED);
 
     assertNumberOfIssues(3);
-    Stream.of(COMPONENTS_OF_SOURCE_CHANGED)
-      .forEach(component -> {
-        assertIssueCreationDate(component, IssueCreationDate.LATEST_ANALYSIS);
-      });
+    assertIssueCreationDate(Component.ForeverAndModified, IssueCreationDate.LATEST_ANALYSIS);
+    assertIssueCreationDate(Component.ForeverAndUnmodified, IssueCreationDate.FIRST_ANALYSIS);
+    assertIssueCreationDate(Component.OnlyInChanged, IssueCreationDate.LATEST_ANALYSIS);
   }
 
   @Test
