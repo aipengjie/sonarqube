@@ -208,7 +208,7 @@ export default class RuleDetailsDescription extends React.PureComponent<Props, S
           dangerouslySetInnerHTML={{ __html: ruleDetails.htmlDesc || '' }}
         />
 
-        {!ruleDetails.isCustom && (
+        {!ruleDetails.templateKey && (
           <div className="coding-rules-detail-description coding-rules-detail-description-extra">
             {!this.state.descriptionForm && this.renderDescription()}
             {this.state.descriptionForm && this.props.canWrite && this.renderForm()}

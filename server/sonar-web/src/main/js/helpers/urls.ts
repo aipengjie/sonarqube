@@ -164,7 +164,7 @@ export function getDeprecatedActiveRulesUrl(query = {}, organization?: string | 
 export function getRuleUrl(rule: string, organization?: string) {
   const pathname = organization ? `/organizations/${organization}/rules` : '/coding_rules';
   /* eslint-disable camelcase */
-  return { pathname, query: { rule_key: rule } };
+  return { pathname, query: { open: rule, rule_key: rule } };
   /* eslint-enable camelcase */
 }
 

@@ -275,8 +275,7 @@ export default class App extends React.PureComponent<Props, State> {
     }, this.stopLoading);
   };
 
-  getSelectedIndex = () => {
-    const { selected, rules } = this.state;
+  getSelectedIndex = ({ selected, rules } = this.state) => {
     const index = rules.findIndex(rule => rule.key === selected);
     return index !== -1 ? index : undefined;
   };
@@ -401,6 +400,31 @@ export default class App extends React.PureComponent<Props, State> {
     return Object.keys(serialized).length > 0;
   };
 
+  /** Tries to take rule by index, or takes the last one  */
+  pickRuleAround = (rules: Rule[], selectedIndex: number | undefined) => {
+    if (selectedIndex === undefined || rules.length === 0) {
+      return undefined;
+    }
+    if (selectedIndex >= 0 && selectedIndex < rules.length) {
+      return rules[selectedIndex].key;
+    }
+    return rules[rules.length - 1].key;
+  };
+
+  handleRuleDelete = (ruleKey: string) => {
+    if (this.state.query.ruleKey === ruleKey) {
+      this.handleReset();
+    } else {
+      this.setState(state => {
+        const rules = state.rules.filter(rule => rule.key !== ruleKey);
+        const selectedIndex = this.getSelectedIndex(state);
+        const selected = this.pickRuleAround(rules, selectedIndex);
+        return { rules, selected };
+      });
+      this.closeRule();
+    }
+  };
+
   render() {
     const { paging, rules } = this.state;
     const selectedIndex = this.getSelectedIndex();
@@ -458,6 +482,7 @@ export default class App extends React.PureComponent<Props, State> {
                 <RuleDetails
                   allowCustomRules={!this.props.organizationsEnabled}
                   canWrite={this.state.canWrite}
+                  onDelete={this.handleRuleDelete}
                   onFilterChange={this.handleFilterChange}
                   organization={this.props.organization && this.props.organization.key}
                   referencedProfiles={this.state.referencedProfiles}

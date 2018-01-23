@@ -47,6 +47,7 @@ export interface Query {
   languages: string[];
   profile: string | undefined;
   repositories: string[];
+  ruleKey: string | undefined;
   severities: string[];
   statuses: string[];
   tags: string[];
@@ -85,6 +86,7 @@ export function parseQuery(query: RawQuery): Query {
     languages: parseAsArray(query.languages, parseAsString),
     profile: parseAsOptionalString(query.qprofile),
     repositories: parseAsArray(query.repositories, parseAsString),
+    ruleKey: parseAsOptionalString(query.rule_key),
     severities: parseAsArray(query.severities, parseAsString),
     statuses: parseAsArray(query.statuses, parseAsString),
     tags: parseAsArray(query.tags, parseAsString),
@@ -105,6 +107,7 @@ export function serializeQuery(query: Query): RawQuery {
     languages: serializeStringArray(query.languages),
     qprofile: serializeString(query.profile),
     repositories: serializeStringArray(query.repositories),
+    rule_key: serializeString(query.ruleKey),
     severities: serializeStringArray(query.severities),
     statuses: serializeStringArray(query.statuses),
     tags: serializeStringArray(query.tags),
@@ -122,6 +125,7 @@ export function shouldRequestFacet(facet: FacetKey) {
     'activationSeverities',
     'languages',
     'repositories',
+    'severities',
     'statuses',
     'tags',
     'types'

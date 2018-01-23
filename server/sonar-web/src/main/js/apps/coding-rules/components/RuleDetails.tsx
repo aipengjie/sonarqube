@@ -26,14 +26,16 @@ import RuleDetailsParameters from './RuleDetailsParameters';
 import RuleDetailsProfiles from './RuleDetailsProfiles';
 import { Query } from '../query';
 import { Profile } from '../../../api/quality-profiles';
-import { getRuleDetails } from '../../../api/rules';
+import { getRuleDetails, deleteRule } from '../../../api/rules';
 import { RuleActivation, RuleDetails as IRuleDetails } from '../../../app/types';
 import DeferredSpinner from '../../../components/common/DeferredSpinner';
-import { translate } from '../../../helpers/l10n';
+import { translate, translateWithParameters } from '../../../helpers/l10n';
+import ConfirmButton from './ConfirmButton';
 
 interface Props {
   allowCustomRules?: boolean;
   canWrite?: boolean;
+  onDelete: (rule: string) => void;
   onFilterChange: (changes: Partial<Query>) => void;
   organization?: string;
   referencedProfiles: { [profile: string]: Profile };
@@ -96,6 +98,18 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
     this.setState(state => ({ ruleDetails: { ...state.ruleDetails, tags } }));
   };
 
+  handleDelete = () => {
+    return deleteRule({ key: this.props.ruleKey }).then(() => {
+      this.props.onDelete(this.props.ruleKey);
+    });
+  };
+
+  handleEditClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.blur();
+    // TODO
+  };
+
   render() {
     const { ruleDetails } = this.state;
 
@@ -129,17 +143,38 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
           />
 
           {params.length > 0 && (
-            <RuleDetailsParameters isCustom={ruleDetails.isCustom} params={params} />
+            <RuleDetailsParameters
+              isCustom={ruleDetails.templateKey !== undefined}
+              params={params}
+            />
           )}
 
           {isEditable && (
             <div className="coding-rules-detail-description">
-              <button className="js-edit-custom" id="coding-rules-detail-custom-rule-change">
+              <button
+                className="js-edit-custom"
+                id="coding-rules-detail-custom-rule-change"
+                onClick={this.handleEditClick}>
                 {translate('edit')}
               </button>
-              <button className="button-red js-delete" id="coding-rules-detail-rule-delete">
-                {translate('delete')}
-              </button>
+              <ConfirmButton
+                confirmButtonText={translate('delete')}
+                isDestructive={true}
+                modalBody={translateWithParameters(
+                  'coding_rules.delete.custom.confirm',
+                  ruleDetails.name
+                )}
+                modalHeader={translate('coding_rules.delete_rule')}
+                onConfirm={this.handleDelete}>
+                {({ onClick }) => (
+                  <button
+                    className="button-red spacer-left js-delete"
+                    id="coding-rules-detail-rule-delete"
+                    onClick={onClick}>
+                    {translate('delete')}
+                  </button>
+                )}
+              </ConfirmButton>
             </div>
           )}
 

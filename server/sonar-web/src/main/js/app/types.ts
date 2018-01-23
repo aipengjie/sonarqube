@@ -210,7 +210,6 @@ export interface RuleDetails {
   htmlDesc?: string;
   htmlNote?: string;
   internalKey?: string;
-  isCustom?: boolean;
   isTemplate?: boolean;
   key: string;
   lang: string;
