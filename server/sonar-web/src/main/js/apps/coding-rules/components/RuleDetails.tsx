@@ -26,7 +26,7 @@ import { RuleActivation, RuleDetails as IRuleDetails, Rule } from '../../../app/
 import BuiltInQualityProfileBadge from '../../quality-profiles/components/BuiltInQualityProfileBadge';
 import { translate, translateWithParameters } from '../../../helpers/l10n';
 import LinkIcon from '../../../components/icons-components/LinkIcon';
-import { getRuleUrl, getQualityProfileUrl } from '../../../helpers/urls';
+import { getRuleUrl, getQualityProfileUrl, getIssuesUrl } from '../../../helpers/urls';
 import SimilarRulesFilter from './SimilarRulesFilter';
 import Tooltip from '../../../components/controls/Tooltip';
 import IssueTypeIcon from '../../../components/ui/IssueTypeIcon';
@@ -38,6 +38,8 @@ import BubblePopupHelper from '../../../components/common/BubblePopupHelper';
 import RuleDetailsTagsPopup from './RuleDetailsTagsPopup';
 import MarkdownTips from '../../../components/common/MarkdownTips';
 import RemoveExtendedDescriptionModal from './RemoveExtendedDescriptionModal';
+import { getFacet } from '../../../api/issues';
+import { formatMeasure } from '../../../helpers/measures';
 
 interface Props {
   allowCustomRules?: boolean;
@@ -56,6 +58,9 @@ interface State {
   extendedDescription: string;
   extendedDescriptionForm: boolean;
   extendingDescritption: boolean;
+  issuesByProject?: Array<{ count: number; project?: { key: string; name: string }; val: string }>;
+  issuesLoading?: boolean;
+  issuesTotal?: number;
   loading: boolean;
   removeExtendedDescriptionModal: boolean;
   ruleDetails?: IRuleDetails;
@@ -100,6 +105,8 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
           this.setState({ actives, loading: false, ruleDetails: rule });
           if (rule.isTemplate) {
             this.fetchCustomRules();
+          } else {
+            this.fetchIssues();
           }
         }
       },
@@ -127,6 +134,32 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
       () => {
         if (this.mounted) {
           this.setState({ customRulesLoading: false });
+        }
+      }
+    );
+  };
+
+  fetchIssues = () => {
+    this.setState({ issuesLoading: true });
+    getFacet({ rules: this.props.ruleKey, resolved: false }, 'projectUuids').then(
+      ({ facet, response }) => {
+        if (this.mounted) {
+          const issuesByProject = facet.map(item => {
+            const project =
+              response.components &&
+              response.components.find(component => component.uuid === item.val);
+            return { ...item, project };
+          });
+          this.setState({
+            issuesByProject,
+            issuesLoading: false,
+            issuesTotal: response.paging.total
+          });
+        }
+      },
+      () => {
+        if (this.mounted) {
+          this.setState({ issuesLoading: false });
         }
       }
     );
@@ -741,7 +774,67 @@ export default class RuleDetails extends React.PureComponent<Props, State> {
             </div>
           )}
 
-          <div className="js-rule-issues coding-rule-section" />
+          {!ruleDetails.isTemplate && (
+            <div className="js-rule-issues coding-rule-section">
+              <div className="coding-rule-section-separator" />
+
+              {this.state.issuesLoading ? (
+                <h3 className="coding-rules-detail-title">
+                  {translate('coding_rules.issues')} <i className="spinner spacer-left" />
+                </h3>
+              ) : (
+                <>
+                  <h3 className="coding-rules-detail-title">
+                    {translate('coding_rules.issues')}{' '}
+                    {this.state.issuesTotal !== undefined && (
+                      <>
+                        (<Link
+                          to={getIssuesUrl(
+                            { resolved: 'false', rules: ruleDetails.key },
+                            this.props.organization
+                          )}>
+                          {this.state.issuesTotal}
+                        </Link>)
+                      </>
+                    )}
+                  </h3>
+
+                  {this.state.issuesByProject &&
+                    this.state.issuesByProject.length > 0 && (
+                      <table className="coding-rules-detail-list coding-rules-most-violated-projects">
+                        <tbody>
+                          <tr>
+                            <td className="coding-rules-detail-list-name" colSpan={2}>
+                              {translate('coding_rules.most_violating_projects')}
+                            </td>
+                          </tr>
+                          {this.state.issuesByProject.map(item => (
+                            <tr key={item.val}>
+                              <td className="coding-rules-detail-list-name">
+                                {item.project ? item.project.name : item.val}
+                              </td>
+                              <td className="coding-rules-detail-list-parameters">
+                                <Link
+                                  to={getIssuesUrl(
+                                    {
+                                      projectUuids: item.val,
+                                      resolved: 'false',
+                                      rules: ruleDetails.key
+                                    },
+                                    this.props.organization
+                                  )}>
+                                  {formatMeasure(item.count, 'INT')}
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                </>
+              )}
+            </div>
+          )}
         </DeferredSpinner>
       </div>
     );

@@ -64,8 +64,9 @@ export function getProjectBranchUrl(key: string, branch: Branch): Location {
 /**
  * Generate URL for a global issues page
  */
-export function getIssuesUrl(query: Query): Location {
-  return { pathname: '/issues', query };
+export function getIssuesUrl(query: Query, organization?: string): Location {
+  const pathname = organization ? `/organizations/${organization}/issues` : '/issues';
+  return { pathname, query };
 }
 
 /**
