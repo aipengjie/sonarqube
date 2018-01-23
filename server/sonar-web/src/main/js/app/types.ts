@@ -236,7 +236,7 @@ export interface RuleActivation {
   inherit: string;
   params: Array<{ key: string; value: string }>;
   qProfile: string;
-  severity?: string;
+  severity: string;
 }
 
 export interface RuleParameter {
